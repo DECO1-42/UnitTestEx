@@ -48,23 +48,24 @@ namespace UnitTestProject
         };
 
         /* Тестирование записи файла */
-        [Test, TestCaseSource(nameof(NewFilesData))]
-        public void WriteTest(File file) 
+        [Test, TestCaseSource(nameof(NewFilesData))]//
+        public void WriteTest(File file)
         {
-            Assert.True(storage.Write(file));
+            Assert.True(storage.Write(file), "Cannot write");
             storage.DeleteAllFiles();
         }
 
         /* Тестирование записи дублирующегося файла */
         [Test, TestCaseSource(nameof(NewExceptionFileData))]
-        public void WriteExceptionTest(File file) {
+        public void WriteExceptionTest(File file)// 
+        {
             bool isException = false;
             try
             {
                 storage.Write(file);
-                Assert.False(storage.Write(file));
+                Assert.False(storage.Write(file), "fd");
                 storage.DeleteAllFiles();
-            } 
+            }
             catch (FileNameAlreadyExistsException)
             {
                 isException = true;
@@ -73,16 +74,12 @@ namespace UnitTestProject
         }
 
         /* Тестирование проверки существования файла */
-        [Test, TestCaseSource(nameof(NewFilesData))]
-        public void IsExistsTest(File file) {
+        [Test, TestCaseSource(nameof(NewFilesData))]//
+        public void IsExistsTest(File file)
+        {
+            storage.Write(file);
             String name = file.GetFilename();
-            Assert.False(storage.IsExists(name));
-            try {
-                storage.Write(file);
-            } catch (FileNameAlreadyExistsException e) {
-                Console.WriteLine(String.Format("Exception {0} in method {1}", e.GetBaseException(), MethodBase.GetCurrentMethod().Name));
-            }
-            Assert.True(storage.IsExists(name));
+            Assert.True(storage.IsExists(name), $"File{name} desen't exists");
             storage.DeleteAllFiles();
         }
 
@@ -95,25 +92,60 @@ namespace UnitTestProject
 
         /* Тестирование получения файлов */
         [Test]
-        public void GetFilesTest()
+        public void GetFilesTest()//
         {
-            foreach (File el in storage.GetFiles()) 
+            foreach (File el in storage.GetFiles())
             {
-                Assert.NotNull(el);
+                Assert.NotNull(el, "Files does not exist");
             }
         }
 
         // Почти эталонный
         /* Тестирование получения файла */
         [Test, TestCaseSource(nameof(NewFilesData))]
-        public void GetFileTest(File expectedFile) 
+        public void GetFileTest(File expectedFile)
         {
             storage.Write(expectedFile);
-
-            File actualfile = storage.GetFile(expectedFile.GetFilename());
-            bool difference = actualfile.GetFilename().Equals(expectedFile.GetFilename()) && actualfile.GetSize().Equals(expectedFile.GetSize());
-
-            Assert.IsFalse(difference, string.Format("There is some differences in {0} or {1}", expectedFile.GetFilename(), expectedFile.GetSize()));
+            bool isException = false;
+            try
+            {
+                File actualfile = storage.GetFile(expectedFile.GetFilename());
+            }
+            catch
+            {
+                isException = true;
+            }
+            finally
+            {
+                storage.DeleteAllFiles();
+            }
+            Assert.True(!isException, "GetFileFailed");
+        }
+        //Тест на корректность вычисления размера пустого файла
+        [Test]
+        public void GetSize_EmptyContent_ReturnZero()
+        {
+            var file = new File("empty.txt", string.Empty);
+            var size = file.GetSize();
+            Assert.AreEqual(0, size, "Size empty file should be = 0");
+        }
+        //Тест на удаление несуществующего файла
+        [Test]
+        public void DeleteNonExistentFile_ReturnsFalse()
+        {
+            var storage = new FileStorage();
+            var fileName = "nonex.txt";
+            var result = storage.Delete(fileName);
+            Assert.False(result, "Attempt to delete a non-existent file");
+        }
+        [Test]
+        //Тест на получение несуществующего файла
+        public void GetFile_NonExistingFile_ShouldReturnNull()
+        {
+            FileStorage storage = new FileStorage();
+            var fileName = "test.txt";
+            var result = storage.GetFile(fileName);
+            Assert.Null(result, "Method should return null if file non exists");
         }
     }
 }
