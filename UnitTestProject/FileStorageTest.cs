@@ -121,5 +121,31 @@ namespace UnitTestProject
             }
             Assert.True(!isException, "GetFileFailed");
         }
+        //Тест на корректность вычисления размера пустого файла
+        [Test]
+        public void GetSize_EmptyContent_ReturnZero()
+        {
+            var file = new File("empty.txt", string.Empty);
+            var size = file.GetSize();
+            Assert.AreEqual(0, size, "Size empty file should be = 0");
+        }
+        //Тест на удаление несуществующего файла
+        [Test]
+        public void DeleteNonExistentFile_ReturnsFalse()
+        {
+            var storage = new FileStorage();
+            var fileName = "nonex.txt";
+            var result = storage.Delete(fileName);
+            Assert.False(result, "Attempt to delete a non-existent file");
+        }
+        [Test]
+        //Тест на получение несуществующего файла
+        public void GetFile_NonExistingFile_ShouldReturnNull()
+        {
+            FileStorage storage = new FileStorage();
+            var fileName = "test.txt";
+            var result = storage.GetFile(fileName);
+            Assert.Null(result, "Method should return null if file non exists");
+        }
     }
 }
